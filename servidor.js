@@ -13,7 +13,7 @@ const supabaseKey = 'sb_publishable_q5ReC5L87fcCOY52BbETuw_iEk_LBvr';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Servidor WebSocket (Si tampoco lo usas en GitHub, puedes comentar la línea de abajo)
-require('./servidor_ws.js');
+//require('./servidor_ws.js');
 
 var app = express();
 
