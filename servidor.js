@@ -6,15 +6,13 @@ var jwt = require('jsonwebtoken'); // 🔑 Librería para JWT
 // 1. Importar e inicializar el cliente de Supabase
 const { createClient } = require('@supabase/supabase-js');
 
-// 2. Configurar con tu URL y tu Public Anon Key (cópialas desde Supabase -> Project Settings -> API)
 // 2. Configuración directa con tu URL y tu Key de Supabase
 const supabaseUrl = 'https://eduzgekecoxxbimswfvp.supabase.co';
 const supabaseKey = 'sb_publishable_q5ReC5L87fcCOY52BbETuw_iEk_LBvr';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Arrancamos los otros servidores
-require('./servidor_rpc.js'); 
+// Servidor WebSocket (Si tampoco lo usas en GitHub, puedes comentar la línea de abajo)
 require('./servidor_ws.js');
 
 var app = express();
