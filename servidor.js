@@ -49,7 +49,7 @@ function verificarToken(req, res, next) {
 }
 
 // Servimos las apps
-app.use('/gestor', express.static(path.join(__dirname, 'cliente_rest')));
+app.use('/gestor', express.static(path.join(__dirname, 'Cliente_rest')));
 app.use('/sanitario', express.static(path.join(__dirname, 'cliente_rpc')));
 
 app.get('/', function(req, res) {
