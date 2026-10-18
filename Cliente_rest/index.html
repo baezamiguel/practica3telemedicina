@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf8">
+    <title>Gestión de Recursos Hospitalarios - SD</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            color: #000;
+            font-size: 13px; /* Más compacto */
+        }
+
+        header {
+            background-color: #cccccc;
+            padding: 6px 10px; /* Más pequeño */
+        }
+
+        h1, h2, h3 {
+            margin: 6px 0;
+            font-size: 16px;
+        }
+
+        .seccion {
+            display: none;
+            padding: 10px;
+            max-width: 900px; /* Más estrecho */
+            margin: auto;
+        }
+
+        .activa {
+            display: block;
+        }
+
+        .formulario {
+            border: 1px solid #000;
+            padding: 8px;
+            margin: 8px 0;
+            width: 350px; /* Más pequeño */
+        }
+
+        .formulario div {
+            margin-bottom: 6px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        input, select {
+            padding: 4px;
+            border: 1px solid #000;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 4px 8px;
+            border: 1px solid #000;
+            background-color: #dddddd;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        button:hover {
+            background-color: #bbbbbb;
+        }
+
+        button.secundario {
+            background-color: #ff9999;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 12px; /* Tabla más compacta */
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px 6px; /* Menos alto */
+            text-align: left;
+        }
+
+        th {
+            background-color: #eeeeee;
+        }
+
+        /* Colores de reservas */
+        .reserva-finalizada {
+            background-color: #ffffff;
+        }
+
+        .reserva-en-uso {
+            background-color: #b3d7ff;
+        }
+
+        .reserva-excedida {
+            background-color: #ff9999;
+        }
+
+        .reserva-pendiente {
+            background-color: #00cc44; /* VERDE POTENTE */
+            color: white;
+            font-weight: bold;
+        }
+
+        fieldset {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+
+        legend {
+            font-weight: bold;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1 id="titulo-app">SD Hospital</h1>
+        <div id="info-usuario" style="display: none;">
+            <span>Bienvenido/a: <strong id="nombre-gestor"></strong></span>
+            <button onclick="editarPerfil()">Editar Perfil</button>
+            <button class="cancelar" onclick="salir()">Salir</button>
+        </div>
+    </header>
+
+    <div id="seccion-login" class="seccion activa">
+        <h2>Acceso Gestores</h2>
+        <div class="formulario">
+            <div><label>Usuario:</label> <input type="text" id="login-user"></div>
+            <div><label>Contraseña:</label> <input type="password" id="login-pass"></div>
+            <button onclick="entrar()">Entrar</button>
+            <button class="cancelar" onclick="mostrarRegistro()">Registrarse</button>
+        </div>
+    </div>
+
+    <div id="seccion-registro" class="seccion">
+        <h2>Registro de Nuevo Gestor</h2>
+        <div class="formulario">
+            <div><label>Nombre:</label> <input type="text" id="reg-nombre"></div>
+            <div><label>Apellidos:</label> <input type="text" id="reg-apellidos"></div>
+            <div><label>Login:</label> <input type="text" id="reg-usuario"></div>
+            <div><label>Contraseña:</label> <input type="password" id="reg-pass"></div>
+            <button onclick="ejecutarRegistro()">Crear Cuenta</button>
+            <button class="cancelar" onclick="volverALogin()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="seccion-perfil" class="seccion">
+        <h2>Mi Perfil de Gestor</h2>
+        <div class="formulario">
+            <input type="hidden" id="perfil-id">
+            <div><label>Nombre:</label> <input type="text" id="perfil-nombre"></div>
+            <div><label>Apellidos:</label> <input type="text" id="perfil-apellidos"></div>
+            <div><label>Login:</label> <input type="text" id="perfil-usuario"></div>
+            <div><label>Contraseña:</label> <input type="password" id="perfil-pass"></div>
+            <button onclick="actualizarPerfil()">Guardar Cambios</button>
+            <button class="cancelar" onclick="volverAListado()">Volver</button>
+        </div>
+    </div>
+
+    <div id="seccion-listado" class="seccion">
+        <h2>Gestión de Recursos</h2>
+        
+        <fieldset>
+            <legend>Búsqueda de recursos</legend>
+            Categoría: <select id="bus-cat" onchange="actualizarModelosBuscador()"><option value="0">Todos</option></select>
+            Modelo: <select id="bus-mod"><option value="0">Todos</option></select>
+            Ubicación: <select id="bus-ubi"><option value="0">Todos</option></select>
+            Estado: 
+            <select id="bus-est">
+                <option value="all">Todos</option>
+                <option value="0">Operativo</option>
+                <option value="1">Baja/Defectuoso</option>
+                <option value="2">Mantenimiento</option>
+            </select>
+            <button onclick="buscar()">Buscar</button>
+        </fieldset>
+
+        <br>
+        <button onclick="abrirFichaNuevo()">+ Añadir Recurso</button>
+        <button onclick="enviarTodasLasReservasAlMinisterio()">📤 Enviar Reservas al Ministerio</button>
+
+        <table id="tabla-recursos">
+            <thead>
+                <tr>
+                    <th>N. Serie</th>
+                    <th>Categoría</th>
+                    <th>Modelo</th>
+                    <th>Ubicación</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-recursos">
+            </tbody>
+        </table>
+
+        <!-- Tabla de Ranking del Ministerio -->
+        <div style="margin-top: 30px;">
+            <h3>📊 Ranking de Reservas por Área Médica (Ministerio de Sanidad)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Área Médica</th>
+                        <th>Reservas Totales</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-ranking">
+                    <!-- Aquí main.js inyectará las filas ordenadas -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h3>🔔 Avisos en Tiempo Real (Reseñas de Sanitarios)</h3>
+            <table border="1" width="100%">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Fecha</th>
+                        <th style="width: 150px;">Origen</th>
+                        <th>Aviso</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-avisos">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="seccion-ficha" class="seccion">
+        <h2>Ficha del Recurso</h2>
+        <div class="formulario">
+            <input type="hidden" id="recurso-id">
+            <div><label>Categoría:</label> <select id="f-cat" onchange="actualizarModelosFicha()"></select></div>
+            <div><label>Modelo:</label> <select id="f-mod"></select></div>
+            <div><label>Núm. Serie:</label> <input type="text" id="f-sn"></div>
+            <div><label>Ubicación:</label> <select id="f-ubi"></select></div>
+            <div><label>Estado:</label> 
+                <select id="f-est">
+                    <option value="0">Operativo</option>
+                    <option value="1">Baja/Defectuoso</option>
+                    <option value="2">Mantenimiento</option>
+                </select>
+            </div>
+            <button onclick="guardarRecurso()">Guardar Recurso</button>
+            <button class="cancelar" onclick="volverAListado()">Volver al Listado</button>
+        </div>
+
+        <hr>
+        <h3>Reservas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sanitario</th>
+                    <th>H. estim.</th>
+                    <th>F. Petición</th>
+                    <th>F. Inicio</th>
+                    <th>F. Fin</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-reservas">
+            </tbody>
+        </table>
+
+        <h3>Reseñas</h3>
+        <table id="tabla-resenyas">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Sanitario</th>
+                    <th>Valoración</th>
+                    <th>Comentario</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-resenyas">
+            </tbody>
+        </table>
+    </div>
+
+    <script src="rest/rest.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
