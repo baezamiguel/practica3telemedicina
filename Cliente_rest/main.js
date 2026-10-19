@@ -57,7 +57,7 @@ async function contar() {
                     let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
                     let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
 
-                    if(nombre=="Admin Hospital"){
+                    if(nombre=="Ejemplo"){
                         total+=1
                     }
 
