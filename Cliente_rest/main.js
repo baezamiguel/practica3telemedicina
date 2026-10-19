@@ -28,6 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
 // ==========================================
 // FUNCIÓN 1: OBTENER DATOS Y CALCULAR RANKING (GET)
 // ==========================================
+function esFechaValida(strFecha) {
+    if (!strFecha || strFecha === "null" || strFecha === "undefined") return false;
+    var timestamp = Date.parse(strFecha);
+    return !isNaN(timestamp);
+}
+
 async function cargarRankingMinisterio() {
     let tbody = document.getElementById("cuerpo-ranking");
     if (!tbody) return;
@@ -36,7 +42,6 @@ async function cargarRankingMinisterio() {
 
     try {
         const res = await fetch(URL_MINISTERIO_API);
-        console.log(res.status, res.url);
         if (!res.ok) throw new Error("Error HTTP " + res.status);
         
         const datosMinisterio = await res.json();
@@ -65,10 +70,22 @@ async function cargarRankingMinisterio() {
                     let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
                     let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
 
-                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
+                    // 1. Comprobar campos obligatorios
+                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "") {
                         continue;
                     }
 
+                    // 2. Validar que la fecha de petición sea obligatoria y con formato válido
+                    if (!esFechaValida(fecPet)) {
+                        console.warn("⚠️ Reserva descartada por fecha de petición inválida:", fecPet);
+                        continue;
+                    }
+
+                    // 3. Si vienen fecIni o fecFin, comprobar que también tengan formato válido
+                    if (res.fec_ini && !esFechaValida(fecIni)) continue;
+                    if (res.fecha_fin && !esFechaValida(fecFin)) continue;
+
+                    // 4. Clave única de duplicados
                     let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
                     if (reservasVistas.includes(claveUnica)) {
