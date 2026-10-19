@@ -17,6 +17,62 @@ const MAPA_AREAS = {
     17: "Traumatología", 18: "Urología"
 };
 
+async function contar() {
+
+    try {
+        const res = await fetch(URL_MINISTERIO_API);
+        if (!res.ok) throw new Error("Error HTTP " + res.status);
+        
+        const datosMinisterio = await res.json();
+
+        if (!datosMinisterio || !Array.isArray(datosMinisterio) || datosMinisterio.length === 0) {
+            alert("error");
+            return;
+        }
+
+        let contadorAreas = {};
+        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
+        let total=0
+
+        for (let registro of datosMinisterio) {
+            let idArea = registro.id_area;
+
+            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
+            if (!MAPA_AREAS[idArea]) {
+                continue;
+            }
+
+            let listaReservas = registro.datos;
+
+            if (Array.isArray(listaReservas)) {
+                for (let res of listaReservas) {
+                    if (!res) continue;
+
+                    // 1. Extraer los campos de la reserva limpiando espacios
+                    let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
+                    let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
+                    let categoria = String(res.categoría || res.categoria || "").trim();
+                    let horas = res.horas_estimadas ?? res.horasEstimadas;
+                    let fecPet = String(res.fec_pet || res.fecha_peticion || "").trim();
+                    let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
+                    let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
+
+                    if(nombre=="Admin"){
+                        total+=1
+                    }
+
+                }
+            }
+        }
+
+
+        alert(total)
+
+    } catch (err) {
+        console.error("Error al cargar ranking:", err);
+    }
+}
+
 // ==========================================
 // AL CARGAR LA PÁGINA (PANTALLA DE LOGIN MANUAL)
 // ==========================================
