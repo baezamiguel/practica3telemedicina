@@ -1,7 +1,7 @@
 var express = require('express');
 var cors = require('cors');
 var path = require('path');
-var jwt = require('jsonwebtoken'); // 🔑 Librería para JWT
+var jwt = require('jwt-simple'); // 🔑 Librería para JWT
 
 // 1. Importar e inicializar el cliente de Supabase
 const { createClient } = require('@supabase/supabase-js');
@@ -25,28 +25,7 @@ app.use(express.json());
 // ==========================================
 const CLAVE_SECRETA = "clave_secreta_hospital_jwt_2026";
 
-function verificarToken(req, res, next) {
-    const cabeceraAuth = req.headers['authorization'];
 
-    if (!cabeceraAuth) {
-        return res.status(401).json({ error: "Acceso bloqueado: No has enviado token." });
-    }
-
-    const token = cabeceraAuth.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ error: "Acceso bloqueado: Formato de token inválido." });
-    }
-
-    jwt.verify(token, CLAVE_SECRETA, function(err, datosDecodificados) {
-        if (err) {
-            return res.status(403).json({ error: "Token inválido o expirado." });
-        }
-
-        req.gestor = datosDecodificados;
-        next();
-    });
-}
 
 // Servimos las apps
 app.use('/gestor', express.static(path.join(__dirname, 'Cliente_rest')));
@@ -56,27 +35,7 @@ app.get('/', function(req, res) {
     res.redirect('/gestor');
 });
 
-//////////////////////////////
-// 1️⃣ CATÁLOGOS
-//////////////////////////////
 
-app.get('/api/ubicaciones', verificarToken, async function(req, res) {
-    const { data, error } = await supabase.from('ubicaciones').select('*');
-    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
-    res.status(200).json(data);
-});
-
-app.get('/api/categorias', verificarToken, async function(req, res) {
-    const { data, error } = await supabase.from('categorias').select('*');
-    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
-    res.status(200).json(data);
-});
-
-app.get('/api/modelos', verificarToken, async function(req, res) {
-    const { data, error } = await supabase.from('modelos').select('*');
-    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
-    res.status(200).json(data);
-});
 
 //////////////////////////////
 // 2️⃣ GESTORES
@@ -97,11 +56,11 @@ app.post('/api/gestores/login', async function(req, res) {
     if (gestores && gestores.length > 0) {
         var idGestor = gestores[0].id;
 
-        var token = jwt.sign(
-            { id: idGestor, usuario: credenciales.usuario },
-            CLAVE_SECRETA,
-            { expiresIn: '2h' }
-        );
+        var contenido = { 
+            usuario: idGestor,
+            expira: Date.now() + 2 * 60 * 60 * 1000 // expira dentro de 2 horas (en ms)
+        };
+        var token = jwt.encode(contenido, CLAVE_SECRETA);
 
         res.status(200).json({
             id: idGestor,
@@ -138,9 +97,39 @@ app.post('/api/gestores', async function(req, res) {
     delete copia.password;
     res.status(201).json(copia);
 });
+// ==========================================
+// 🔒 MIDDLEWARE GLOBAL DEL PROFESOR
+// Antes de este use, los servicios son públicos. Después son privados.
+// ==========================================
+app.use("/api", function (req, res, next) {
+    var cabeceraAuth = req.headers['authorization'];
+    var token = cabeceraAuth ? cabeceraAuth.split(' ')[1] : null;
+
+    if (!token && req.query.token) token = req.query.token;
+
+    if (!token) return res.status(401).json({ error: "No se ha encontrado token" });
+
+    var contenidoToken;
+    try { 
+        contenidoToken = jwt.decode(token, CLAVE_SECRETA); 
+    } catch (error) {
+        return res.status(403).json({ error: "El token es incorrecto" });
+    }
+
+    if (!contenidoToken || !contenidoToken.expira || !contenidoToken.usuario) { 
+        return res.status(403).json({ error: "Formato inadecuado" });
+    }
+
+    if (contenidoToken.expira < Date.now()) {
+        return res.status(403).json({ error: "El token ha expirado" });
+    }
+
+    req.gestor = contenidoToken;
+    next();
+});
 
 // ACTUALIZAR
-app.put('/api/gestores/:id', verificarToken, async function(req, res) {
+app.put('/api/gestores/:id', async function(req, res) {
     var idGestor = req.params.id;
     var datosNuevos = req.body;
 
@@ -172,8 +161,30 @@ app.put('/api/gestores/:id', verificarToken, async function(req, res) {
     res.status(200).json(copia);
 });
 
+//////////////////////////////
+// 1️⃣ CATÁLOGOS
+//////////////////////////////
+
+app.get('/api/ubicaciones', async function(req, res) {
+    const { data, error } = await supabase.from('ubicaciones').select('*');
+    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
+    res.status(200).json(data);
+});
+
+app.get('/api/categorias', async function(req, res) {
+    const { data, error } = await supabase.from('categorias').select('*');
+    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
+    res.status(200).json(data);
+});
+
+app.get('/api/modelos', async function(req, res) {
+    const { data, error } = await supabase.from('modelos').select('*');
+    if (error) return res.status(500).json({ error: "Error en BD: " + error.message });
+    res.status(200).json(data);
+});
+
 // OBTENER POR ID
-app.get('/api/gestores/:id', verificarToken, async function(req, res) {
+app.get('/api/gestores/:id', async function(req, res) {
     const { data: gestores, error } = await supabase
         .from('gestores')
         .select('*')
@@ -191,7 +202,7 @@ app.get('/api/gestores/:id', verificarToken, async function(req, res) {
 // 3️⃣ SANITARIOS
 //////////////////////////////
 
-app.get('/api/sanitarios/:id', verificarToken, async function(req, res) {
+app.get('/api/sanitarios/:id', async function(req, res) {
     const { data: sanitarios, error } = await supabase
         .from('sanitarios')
         .select('*')
@@ -210,7 +221,7 @@ app.get('/api/sanitarios/:id', verificarToken, async function(req, res) {
 //////////////////////////////
 
 // LISTADO CON FILTROS
-app.get('/api/recursos', verificarToken, async function(req, res) {
+app.get('/api/recursos', async function(req, res) {
     let query = supabase.from('recurso').select('*');
 
     if (req.query.categoria && req.query.categoria != "0") {
@@ -246,7 +257,7 @@ app.get('/api/recursos', verificarToken, async function(req, res) {
 });
 
 // OBTENER POR ID
-app.get('/api/recursos/:id', verificarToken, async function(req, res) {
+app.get('/api/recursos/:id', async function(req, res) {
     const { data: recursos, error } = await supabase
         .from('recurso')
         .select('*')
@@ -259,7 +270,7 @@ app.get('/api/recursos/:id', verificarToken, async function(req, res) {
 });
 
 // CREAR
-app.post('/api/recursos', verificarToken, async function(req, res) {
+app.post('/api/recursos', async function(req, res) {
     var nuevo = req.body;
 
     const { data: insertados, error } = await supabase
@@ -273,7 +284,7 @@ app.post('/api/recursos', verificarToken, async function(req, res) {
 });
 
 // ACTUALIZAR
-app.put('/api/recursos/:id', verificarToken, async function(req, res) {
+app.put('/api/recursos/:id', async function(req, res) {
     const { data: actualizados, error } = await supabase
         .from('recurso')
         .update(req.body)
@@ -287,7 +298,7 @@ app.put('/api/recursos/:id', verificarToken, async function(req, res) {
 });
 
 // BORRAR
-app.delete('/api/recursos/:id', verificarToken, async function(req, res) {
+app.delete('/api/recursos/:id', async function(req, res) {
     const { data: borrados, error } = await supabase
         .from('recurso')
         .delete()
@@ -304,7 +315,7 @@ app.delete('/api/recursos/:id', verificarToken, async function(req, res) {
 // 5️⃣ RESERVAS Y RESEÑAS
 //////////////////////////////
 
-app.get('/api/recursos/:id/reservas', verificarToken, async function(req, res) {
+app.get('/api/recursos/:id/reservas', async function(req, res) {
     const { data: recursos, error: errRec } = await supabase
         .from('recurso')
         .select('id')
@@ -322,7 +333,7 @@ app.get('/api/recursos/:id/reservas', verificarToken, async function(req, res) {
     res.status(200).json(reservas);
 });
 
-app.get('/api/recursos/:id/resenyas', verificarToken, async function(req, res) {
+app.get('/api/recursos/:id/resenyas', async function(req, res) {
     const { data: recursos, error: errRec } = await supabase
         .from('recurso')
         .select('id')
