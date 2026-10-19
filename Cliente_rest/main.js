@@ -28,12 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
 // ==========================================
 // FUNCIÓN 1: OBTENER DATOS Y CALCULAR RANKING (GET)
 // ==========================================
-function esFechaValida(strFecha) {
-    if (!strFecha || strFecha === "null" || strFecha === "undefined") return false;
-    var timestamp = Date.parse(strFecha);
-    return !isNaN(timestamp);
-}
-
 async function cargarRankingMinisterio() {
     let tbody = document.getElementById("cuerpo-ranking");
     if (!tbody) return;
@@ -52,16 +46,23 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
-        let reservasVistas = [];
+        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
+
+            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
+            if (!MAPA_AREAS[idArea]) {
+                continue;
+            }
+
             let listaReservas = registro.datos;
 
             if (Array.isArray(listaReservas)) {
                 for (let res of listaReservas) {
                     if (!res) continue;
 
+                    // 1. Extraer los campos de la reserva limpiando espacios
                     let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
                     let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
                     let categoria = String(res.categoría || res.categoria || "").trim();
@@ -70,25 +71,16 @@ async function cargarRankingMinisterio() {
                     let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
                     let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
 
-                    // 1. Comprobar campos obligatorios
-                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "") {
+                    // 2. Comprobar que tenga los campos obligatorios rellenos
+                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
                         continue;
                     }
 
-                    // 2. Validar que la fecha de petición sea obligatoria y con formato válido
-                    if (!esFechaValida(fecPet)) {
-                        console.warn("⚠️ Reserva descartada por fecha de petición inválida:", fecPet);
-                        continue;
-                    }
-
-                    // 3. Si vienen fecIni o fecFin, comprobar que también tengan formato válido
-                    if (res.fec_ini && !esFechaValida(fecIni)) continue;
-                    if (res.fecha_fin && !esFechaValida(fecFin)) continue;
-
-                    // 4. Clave única de duplicados
+                    // 3. Crear texto único para comprobar si la reserva está repetida
                     let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
                     if (reservasVistas.includes(claveUnica)) {
+                        console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
                         continue;
                     }
 
@@ -102,12 +94,13 @@ async function cargarRankingMinisterio() {
             }
         }
 
+        // Pasar los resultados a un array para poder ordenarlo de mayor a menor
         let ranking = [];
         for (let id in contadorAreas) {
             if (contadorAreas[id] > 0) {
                 ranking.push({
                     idArea: id,
-                    nombre: MAPA_AREAS[id] || ("Área " + id),
+                    nombre: MAPA_AREAS[id],
                     total: contadorAreas[id]
                 });
             }
@@ -127,7 +120,6 @@ async function cargarRankingMinisterio() {
         tbody.innerHTML = `<tr><td colspan='3' style='color:red;'>Error al conectar con el Ministerio (${err.message})</td></tr>`;
     }
 }
-
 function pintarFilasRanking(rankingOrdenado, elementoTbody) {
     let html = "";
     for (let i = 0; i < rankingOrdenado.length; i++) {
