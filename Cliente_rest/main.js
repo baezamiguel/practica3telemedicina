@@ -7,7 +7,6 @@ var ubicaciones = [];
 // CONFIGURACIÓN Y DICCIONARIO DE ÁREAS MÉDICAS
 // ==========================================
 const URL_MINISTERIO_API = "https://undefined.ua.es/telemedicina/api/datos";
-console.log(res.status, res.url);
 const MI_ID_AREA = 1;
 
 const MAPA_AREAS = {
@@ -37,6 +36,7 @@ async function cargarRankingMinisterio() {
 
     try {
         const res = await fetch(URL_MINISTERIO_API);
+        console.log(res.status, res.url);
         if (!res.ok) throw new Error("Error HTTP " + res.status);
         
         const datosMinisterio = await res.json();
