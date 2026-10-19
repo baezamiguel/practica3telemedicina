@@ -2,7 +2,6 @@ var idGestorLogueado = null;
 var categorias = [];
 var modelos = [];
 var ubicaciones = [];
-var conexionWS = null;
 
 // ==========================================
 // CONFIGURACIÓN Y DICCIONARIO DE ÁREAS MÉDICAS
@@ -19,42 +18,12 @@ const MAPA_AREAS = {
 };
 
 // ==========================================
-// AUTO-LOGIN AL CARGAR LA PÁGINA
+// AL CARGAR LA PÁGINA (PANTALLA DE LOGIN MANUAL)
 // ==========================================
 document.addEventListener("DOMContentLoaded", function () {
     cargarRankingMinisterio();
-    
-    // 🚀 Entrar directamente realizando login automático (obtiene el Token JWT y abre el listado)
-    autoEntrarDirecto();
+    mostrarSeccion('seccion-login'); // Muestra la pantalla de login por defecto
 });
-
-function autoEntrarDirecto() {
-    // Intentamos login automático con el usuario 'admin' (o puedes cambiar las credenciales)
-    rest.post("/api/gestores/login", { usuario: "admin", password: "123" }, function(status, respuesta) {
-        if(status == 200 && respuesta) {
-            localStorage.setItem("token_jwt", respuesta.token);
-            idGestorLogueado = respuesta.id;
-
-            rest.get("/api/gestores/" + idGestorLogueado, function(s, datos) {
-                if (datos) {
-                    var elNombre = document.getElementById('nombre-gestor');
-                    var elInfo = document.getElementById('info-usuario');
-                    if (elNombre) elNombre.innerText = datos.nombre + " " + datos.apellidos;
-                    if (elInfo) elInfo.style.display = 'flex';
-                    
-                    conectarWS(idGestorLogueado, datos.nombre + " " + datos.apellidos);
-                }
-                
-                // Muestra directamente la sección del gestor
-                mostrarSeccion('seccion-listado');
-                cargarCatalogosYBuscar();
-            });
-        } else {
-            // Si el auto-login falla, se muestra la pantalla de login por defecto
-            mostrarSeccion('seccion-login');
-        }
-    });
-}
 
 // ==========================================
 // FUNCIÓN 1: OBTENER DATOS Y CALCULAR RANKING (GET)
@@ -245,34 +214,6 @@ async function enviarTodasLasReservasAlMinisterio() {
     }
 }
 
-function conectarWS(id, nombre) {
-    try {
-        conexionWS = new WebSocket("ws://localhost:4444", "hospital");
-        
-        conexionWS.addEventListener("open", function () {
-            conexionWS.send(JSON.stringify({ operacion: "identificar", id: id, tipo: 'gestor', nombre: nombre }));
-        });
-        conexionWS.addEventListener("message", function (msg) {
-            var aviso = JSON.parse(msg.data);
-            var tabla = document.getElementById('cuerpo-avisos');
-            if(tabla) {
-                var fila = `<tr style="color: ${aviso.color}; font-weight: bold;">
-                    <td>${new Date(aviso.fecha).toLocaleString()}</td>
-                    <td>${aviso.origen}</td>
-                    <td>${aviso.texto}</td>
-                </tr>`;
-                tabla.insertAdjacentHTML('afterbegin', fila);
-            }
-            var seccionListado = document.getElementById('seccion-listado');
-            if (seccionListado && seccionListado.classList.contains('activa')) {
-                buscar();
-            }
-        });
-    } catch(e) {
-        console.warn("WebSocket no disponible:", e);
-    }
-}
-
 function cargarCatalogosYBuscar() {
     rest.get("/api/categorias", function(s, r) {
         categorias = r || [];
@@ -372,6 +313,7 @@ function actualizarModelosBuscador() {
     cbMod.innerHTML = opciones;
 }
 
+// LOGIN MANUAL
 function entrar() {
     var usuario = document.getElementById('login-user').value;
     var password = document.getElementById('login-pass').value;
@@ -382,10 +324,11 @@ function entrar() {
             idGestorLogueado = respuesta.id;
 
             rest.get("/api/gestores/" + idGestorLogueado, function(s, datos) {
-                document.getElementById('nombre-gestor').innerText = datos.nombre + " " + datos.apellidos;
-                document.getElementById('info-usuario').style.display = 'flex';
+                var elNombre = document.getElementById('nombre-gestor');
+                var elInfo = document.getElementById('info-usuario');
+                if (elNombre && datos) elNombre.innerText = datos.nombre + " " + datos.apellidos;
+                if (elInfo) elInfo.style.display = 'flex';
                 
-                conectarWS(idGestorLogueado, datos.nombre + " " + datos.apellidos);
                 mostrarSeccion('seccion-listado');
                 cargarCatalogosYBuscar();
             });
@@ -460,16 +403,6 @@ function guardarRecurso() {
         rest.put("/api/recursos/" + id, d, function(s) { alert("Recurso actualizado"); mostrarSeccion('seccion-listado'); buscar(); });
     } else {
         rest.post("/api/recursos", d, function(s) { 
-            if(conexionWS) {
-                var m = modelos.find(item => item.id == d.modelo);
-                var c = m ? categorias.find(item => item.id == m.categoria) : null;
-                conexionWS.send(JSON.stringify({
-                    operacion: "nuevo_recurso",
-                    categoria: c ? c.nombre : "Desconocida",
-                    modelo: m ? m.nombre : "Desconocido",
-                    sn: d.numero_serie || "S/N"
-                }));
-            }
             alert("Recurso creado"); mostrarSeccion('seccion-listado'); buscar(); 
         });
     }
@@ -583,7 +516,6 @@ function actualizarModelosFicha() {
 function salir() {
     idGestorLogueado = null;
     localStorage.removeItem("token_jwt");
-    if(conexionWS) conexionWS.close();
     var elInfo = document.getElementById('info-usuario');
     if (elInfo) elInfo.style.display = 'none';
     mostrarSeccion('seccion-login');
