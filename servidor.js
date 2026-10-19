@@ -53,13 +53,7 @@ app.use('/gestor', express.static(path.join(__dirname, 'Cliente_rest')));
 app.use('/sanitario', express.static(path.join(__dirname, 'cliente_rpc')));
 
 app.get('/', function(req, res) {
-    res.send(`
-        <div style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
-            <h1>🏥 Portal Hospitalario SD</h1>
-            <a href="/gestor" style="font-size: 20px; margin: 20px; display: inline-block;">👩‍💼 Acceso Gestores</a>
-            <a href="/sanitario" style="font-size: 20px; margin: 20px; display: inline-block;">🩺 Acceso Sanitarios</a>
-        </div>
-    `);
+    res.redirect('/gestor');
 });
 
 //////////////////////////////
