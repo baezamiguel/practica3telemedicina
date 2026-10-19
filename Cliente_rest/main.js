@@ -2,13 +2,13 @@ var idGestorLogueado = null;
 var categorias = [];
 var modelos = [];
 var ubicaciones = [];
-var conexionWS = null; // 🔴 NUEVO
+var conexionWS = null;
 
 // ==========================================
 // CONFIGURACIÓN Y DICCIONARIO DE ÁREAS MÉDICAS
 // ==========================================
-const URL_MINISTERIO_API = "https://undefined.ua.es/telemedicina/api/datos"; // Sustituye 'undefined' por el host real si aplica
-const MI_ID_AREA = 1; // 🎯 1 = Alergología (Puedes cambiarlo del 1 al 18 según pida el profesor)
+const URL_MINISTERIO_API = "https://undefined.ua.es/telemedicina/api/datos";
+const MI_ID_AREA = 1;
 
 const MAPA_AREAS = {
     1: "Alergología", 2: "Anestesiología", 3: "Cardiología", 4: "Cirugía General",
@@ -17,6 +17,44 @@ const MAPA_AREAS = {
     13: "Oftalmología", 14: "Oncología", 15: "Pediatría", 16: "Psiquiatría",
     17: "Traumatología", 18: "Urología"
 };
+
+// ==========================================
+// AUTO-LOGIN AL CARGAR LA PÁGINA
+// ==========================================
+document.addEventListener("DOMContentLoaded", function () {
+    cargarRankingMinisterio();
+    
+    // 🚀 Entrar directamente realizando login automático (obtiene el Token JWT y abre el listado)
+    autoEntrarDirecto();
+});
+
+function autoEntrarDirecto() {
+    // Intentamos login automático con el usuario 'admin' (o puedes cambiar las credenciales)
+    rest.post("/api/gestores/login", { usuario: "admin", password: "123" }, function(status, respuesta) {
+        if(status == 200 && respuesta) {
+            localStorage.setItem("token_jwt", respuesta.token);
+            idGestorLogueado = respuesta.id;
+
+            rest.get("/api/gestores/" + idGestorLogueado, function(s, datos) {
+                if (datos) {
+                    var elNombre = document.getElementById('nombre-gestor');
+                    var elInfo = document.getElementById('info-usuario');
+                    if (elNombre) elNombre.innerText = datos.nombre + " " + datos.apellidos;
+                    if (elInfo) elInfo.style.display = 'flex';
+                    
+                    conectarWS(idGestorLogueado, datos.nombre + " " + datos.apellidos);
+                }
+                
+                // Muestra directamente la sección del gestor
+                mostrarSeccion('seccion-listado');
+                cargarCatalogosYBuscar();
+            });
+        } else {
+            // Si el auto-login falla, se muestra la pantalla de login por defecto
+            mostrarSeccion('seccion-login');
+        }
+    });
+}
 
 // ==========================================
 // FUNCIÓN 1: OBTENER DATOS Y CALCULAR RANKING (GET)
@@ -39,7 +77,7 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
-        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
+        let reservasVistas = [];
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
@@ -49,7 +87,6 @@ async function cargarRankingMinisterio() {
                 for (let res of listaReservas) {
                     if (!res) continue;
 
-                    // 1. Extraer los campos de la reserva limpiando espacios
                     let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
                     let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
                     let categoria = String(res.categoría || res.categoria || "").trim();
@@ -58,16 +95,13 @@ async function cargarRankingMinisterio() {
                     let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
                     let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
 
-                    // 2. Comprobar que tenga los campos obligatorios rellenos
                     if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
                         continue;
                     }
 
-                    // 3. Crear texto único para comprobar si la reserva está repetida
                     let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
                     if (reservasVistas.includes(claveUnica)) {
-                        console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
                         continue;
                     }
 
@@ -81,7 +115,6 @@ async function cargarRankingMinisterio() {
             }
         }
 
-        // Pasar los resultados a un array para poder ordenarlo de mayor a menor
         let ranking = [];
         for (let id in contadorAreas) {
             if (contadorAreas[id] > 0) {
@@ -108,17 +141,8 @@ async function cargarRankingMinisterio() {
     }
 }
 
-// Ejecutar automáticamente al abrir la página (el Ministerio es una API externa pública)
-document.addEventListener("DOMContentLoaded", function () {
-    cargarRankingMinisterio();
-});
-
-// ==========================================
-// FUNCIÓN 2: PINTAR LAS FILAS EN EL HTML
-// ==========================================
 function pintarFilasRanking(rankingOrdenado, elementoTbody) {
     let html = "";
-    
     for (let i = 0; i < rankingOrdenado.length; i++) {
         html += `
             <tr>
@@ -128,13 +152,9 @@ function pintarFilasRanking(rankingOrdenado, elementoTbody) {
             </tr>
         `;
     }
-
     elementoTbody.innerHTML = html;
 }
 
-// ==========================================
-// FUNCIÓN 3: CONVERTIR REST.GET EN PROMESA
-// ==========================================
 function restGetPromise(url) {
     return new Promise((resolve) => {
         rest.get(url, function (status, data) {
@@ -147,14 +167,10 @@ function restGetPromise(url) {
     });
 }
 
-// ==========================================
-// FUNCIÓN 4: ENVIAR RESERVAS AL MINISTERIO (POST)
-// ==========================================
 async function enviarTodasLasReservasAlMinisterio() {
     try {
         const hoy = new Date().toISOString().split("T")[0];
 
-        // 1. Pedimos categorías, modelos y recursos a nuestro servidor (ya protegidos con JWT)
         const listaCategorias = await restGetPromise("/api/categorias") || [];
         const listaModelos = await restGetPromise("/api/modelos") || [];
         const listaRecursos = await restGetPromise("/api/recursos") || [];
@@ -166,7 +182,6 @@ async function enviarTodasLasReservasAlMinisterio() {
 
         let todasLasReservas = [];
 
-        // 2. Recorremos cada recurso para buscar sus reservas y los datos del sanitario
         for (let recurso of listaRecursos) {
             let mod = listaModelos.find(m => m.id === recurso.modelo);
             let cat = listaCategorias.find(c => mod && c.id === mod.categoria);
@@ -205,25 +220,19 @@ async function enviarTodasLasReservasAlMinisterio() {
             return;
         }
 
-        // 3. Montamos el paquete final con id_area, fecha y datos
         const cuerpoPeticion = {
             "id_area": MI_ID_AREA,
             "fecha": hoy,
             "datos": todasLasReservas
         };
 
-        // 4. Enviamos el POST a la API del Ministerio
         const res = await fetch(URL_MINISTERIO_API, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(cuerpoPeticion)
         });
 
-        if (!res.ok) {
-            throw new Error("HTTP " + res.status);
-        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
 
         await res.json();
         alert("¡Se han enviado con éxito todas las reservas al Ministerio para el Área " + MI_ID_AREA + "!");
@@ -236,32 +245,34 @@ async function enviarTodasLasReservasAlMinisterio() {
     }
 }
 
-// 🔴 FUNCIÓN WEBSOCKETS
 function conectarWS(id, nombre) {
-    conexionWS = new WebSocket("ws://localhost:4444", "hospital");
-    
-    conexionWS.addEventListener("open", function () {
-        conexionWS.send(JSON.stringify({ operacion: "identificar", id: id, tipo: 'gestor', nombre: nombre }));
-    });
-    conexionWS.addEventListener("message", function (msg) {
-        var aviso = JSON.parse(msg.data);
-        var tabla = document.getElementById('cuerpo-avisos');
-        if(tabla) {
-            var fila = `<tr style="color: ${aviso.color}; font-weight: bold;">
-                <td>${new Date(aviso.fecha).toLocaleString()}</td>
-                <td>${aviso.origen}</td>
-                <td>${aviso.texto}</td>
-            </tr>`;
-            tabla.insertAdjacentHTML('afterbegin', fila);
-        }
-        var seccionListado = document.getElementById('seccion-listado');
-        if (seccionListado && seccionListado.classList.contains('activa')) {
-            buscar();
-        }
-    });
+    try {
+        conexionWS = new WebSocket("ws://localhost:4444", "hospital");
+        
+        conexionWS.addEventListener("open", function () {
+            conexionWS.send(JSON.stringify({ operacion: "identificar", id: id, tipo: 'gestor', nombre: nombre }));
+        });
+        conexionWS.addEventListener("message", function (msg) {
+            var aviso = JSON.parse(msg.data);
+            var tabla = document.getElementById('cuerpo-avisos');
+            if(tabla) {
+                var fila = `<tr style="color: ${aviso.color}; font-weight: bold;">
+                    <td>${new Date(aviso.fecha).toLocaleString()}</td>
+                    <td>${aviso.origen}</td>
+                    <td>${aviso.texto}</td>
+                </tr>`;
+                tabla.insertAdjacentHTML('afterbegin', fila);
+            }
+            var seccionListado = document.getElementById('seccion-listado');
+            if (seccionListado && seccionListado.classList.contains('activa')) {
+                buscar();
+            }
+        });
+    } catch(e) {
+        console.warn("WebSocket no disponible:", e);
+    }
 }
 
-// --- CARGA DE CATÁLOGOS (SE LLAMA TRAS EL LOGIN PARA TENER EL TOKEN JWT) ---
 function cargarCatalogosYBuscar() {
     rest.get("/api/categorias", function(s, r) {
         categorias = r || [];
@@ -270,13 +281,12 @@ function cargarCatalogosYBuscar() {
             rest.get("/api/ubicaciones", function(s, r) {
                 ubicaciones = r || [];
                 rellenarSelects();
-                buscar(); // Una vez tenemos categorías, modelos y ubicaciones, pintamos la tabla
+                buscar();
             });
         });
     });
 }
 
-// --- REGISTRO (PÚBLICO) ---
 function mostrarRegistro() {
     document.getElementById('reg-nombre').value = "";
     document.getElementById('reg-apellidos').value = "";
@@ -302,7 +312,6 @@ function ejecutarRegistro() {
     });
 }
 
-// --- PERFIL (PRIVADO) ---
 function editarPerfil() {
     rest.get("/api/gestores/" + idGestorLogueado, function(s, datos) {
         document.getElementById('perfil-id').value = datos.id;
@@ -342,7 +351,6 @@ function rellenarSelects() {
     var opcionesUbi = ubicaciones.map(u => "<option value='" + u.id + "'>" + u.nombre + "</option>").join("");
     var opcionesCat = categorias.map(c => "<option value='" + c.id + "'>" + c.nombre + "</option>").join("");
 
-    // Reiniciamos el contenido antes de añadir para no duplicar si se hace logout/login
     if (busUbi) busUbi.innerHTML = "<option value='0'>Todas</option>" + opcionesUbi;
     if (fUbi) fUbi.innerHTML = opcionesUbi;
     if (busCat) busCat.innerHTML = "<option value='0'>Todas</option>" + opcionesCat;
@@ -364,28 +372,21 @@ function actualizarModelosBuscador() {
     cbMod.innerHTML = opciones;
 }
 
-// --- LOGIN (CON JWT) ---
 function entrar() {
     var usuario = document.getElementById('login-user').value;
     var password = document.getElementById('login-pass').value;
 
     rest.post("/api/gestores/login", { usuario: usuario, password: password }, function(status, respuesta) {
         if(status == 200 && respuesta) {
-            // 1. Guardamos el token JWT en el navegador
             localStorage.setItem("token_jwt", respuesta.token);
-            
-            // 2. Guardamos el ID numérico del gestor
             idGestorLogueado = respuesta.id;
 
-            // 3. Pedimos los datos del gestor (rest.js ya adjunta el token automáticamente)
             rest.get("/api/gestores/" + idGestorLogueado, function(s, datos) {
                 document.getElementById('nombre-gestor').innerText = datos.nombre + " " + datos.apellidos;
                 document.getElementById('info-usuario').style.display = 'flex';
                 
                 conectarWS(idGestorLogueado, datos.nombre + " " + datos.apellidos);
                 mostrarSeccion('seccion-listado');
-                
-                // 4. Cargamos catálogos (ahora que tenemos token) y pintamos la tabla de recursos
                 cargarCatalogosYBuscar();
             });
         } else {
@@ -394,7 +395,6 @@ function entrar() {
     });
 }
 
-// --- BUSCAR RECURSOS ---
 function buscar() {
     var params = [];
     var elCat = document.getElementById('bus-cat');
@@ -438,7 +438,6 @@ function buscar() {
     });
 }
 
-// --- FICHA RECURSO ---
 function abrirFichaNuevo() {
     document.getElementById('recurso-id').value = "";
     document.getElementById('f-sn').value = "";
@@ -565,11 +564,11 @@ function borrarRecurso(id) {
     }
 }
 
-// --- AUXILIARES ---
 function mostrarSeccion(id) {
     var s = document.getElementsByClassName('seccion');
     for(var i=0;i<s.length;i++) s[i].classList.remove('activa');
-    document.getElementById(id).classList.add('activa');
+    var objetivo = document.getElementById(id);
+    if(objetivo) objetivo.classList.add('activa');
 }
 
 function actualizarModelosFicha() {
@@ -577,14 +576,15 @@ function actualizarModelosFicha() {
     var cb = document.getElementById('f-mod');
     if(!comboCat || !cb) return;
     var opciones = modelos.filter(m => m.categoria == comboCat.value)
-                         .map(m => "<option value='" + m.id + "'>" + m.nombre + "</option>").join("");
+                          .map(m => "<option value='" + m.id + "'>" + m.nombre + "</option>").join("");
     cb.innerHTML = opciones;
 }
 
 function salir() {
     idGestorLogueado = null;
-    localStorage.removeItem("token_jwt"); // 🔑 JWT: Borramos el token al cerrar sesión
+    localStorage.removeItem("token_jwt");
     if(conexionWS) conexionWS.close();
-    document.getElementById('info-usuario').style.display = 'none';
+    var elInfo = document.getElementById('info-usuario');
+    if (elInfo) elInfo.style.display = 'none';
     mostrarSeccion('seccion-login');
 }
