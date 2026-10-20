@@ -166,9 +166,6 @@ async function contar() {
                         continue;
                     }
 
-                    if(fecFin=="null"){
-                        total+=1
-                    }
                     // 3. Crear texto único para comprobar si la reserva está repetida
                     let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
@@ -183,6 +180,10 @@ async function contar() {
                         contadorAreas[idArea] = 0;
                     }
                     contadorAreas[idArea] = contadorAreas[idArea] + 1;
+
+                    if(fecFin=="null" && fecIni!="null"){
+                        total+=1
+                    }
                 }
             }
         }
