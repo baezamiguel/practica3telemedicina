@@ -68,7 +68,7 @@ async function cargarRankingMinisterio() {
                     // 1. Extraer campos
                     let nombre = String(reserva.nombre || reserva.nombre_sanitario || "").trim();
                     let apellidos = String(reserva.apellidos || reserva.apellidos_sanitario || "").trim();
-                    let categoria = String(reserva["categoría"] || reserva.categoria || "").trim();
+                    let categoria = String(reserva["categoría"] || "").trim();
                     
                     let horasRaw = reserva.horas_estimadas ?? reserva.horasEstimadas;
                     let horas = (horasRaw !== undefined && horasRaw !== null) ? String(horasRaw).trim() : "";
