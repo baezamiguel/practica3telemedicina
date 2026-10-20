@@ -140,7 +140,7 @@ async function contar() {
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
-            if(idArea==13){
+            if(idArea==18){
                 total+=1
             }
             // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
