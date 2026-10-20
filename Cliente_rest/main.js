@@ -184,8 +184,8 @@ async function contar() {
             }
         }
         
-        alert(contadorArea[16])
-            console.log(contadorArea[16])
+        alert(contadorAreas[16])
+            console.log(contadorAreas[16])
 ;
 
     } catch (err) {
