@@ -140,9 +140,7 @@ async function contar() {
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
-            if(idArea==18){
-                total+=1
-            }
+    
             // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
             if (!MAPA_AREAS[idArea]) {
                 continue;
@@ -168,6 +166,9 @@ async function contar() {
                         continue;
                     }
 
+                    if(fecFin==null){
+                        total+=1
+                    }
                     // 3. Crear texto único para comprobar si la reserva está repetida
                     let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
