@@ -166,7 +166,7 @@ async function contar() {
                         continue;
                     }
 
-                    if(fecFin==null){
+                    if(fecFin=="null"){
                         total+=1
                     }
                     // 3. Crear texto único para comprobar si la reserva está repetida
