@@ -176,9 +176,10 @@ async function contar() {
 
                     reservasVistas.push(claveUnica);
 
-                    if(categoria.toLowerCase()=="termómetros"){
-                        total+=1
+                    if (!contadorAreas[idArea]) {
+                        contadorAreas[idArea] = 0;
                     }
+                    contadorAreas[idArea] = contadorAreas[idArea] + 1;
                 }
             }
         }
