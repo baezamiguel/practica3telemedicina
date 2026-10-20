@@ -176,7 +176,7 @@ async function contar() {
 
                     reservasVistas.push(claveUnica);
 
-                    if(nombre.toLowerCase()=="termometros"){
+                    if(nombre.toLowerCase()=="termómetros"){
                         total+=1
                     }
                 }
