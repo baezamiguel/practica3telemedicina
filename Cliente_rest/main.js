@@ -140,7 +140,9 @@ async function contar() {
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
-
+            if(idArea==13){
+                total+=1
+            }
             // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
             if (!MAPA_AREAS[idArea]) {
                 continue;
@@ -184,8 +186,8 @@ async function contar() {
             }
         }
         
-        alert(contadorAreas[16])
-            console.log(contadorAreas[16])
+        alert(total)
+        
 ;
 
     } catch (err) {
