@@ -121,6 +121,77 @@ async function cargarRankingMinisterio() {
         tbody.innerHTML = `<tr><td colspan='3' style='color:red;'>Error al conectar con el Ministerio (${err.message})</td></tr>`;
     }
 }
+
+async function contar() {
+    try {
+        const res = await fetch(URL_MINISTERIO_API);
+        if (!res.ok) throw new Error("Error HTTP " + res.status);
+        
+        const datosMinisterio = await res.json();
+
+        if (!datosMinisterio || !Array.isArray(datosMinisterio) || datosMinisterio.length === 0) {
+            alert("no hay datos");
+            return;
+        }
+
+        let contadorAreas = {};
+        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
+        let total=0
+
+        for (let registro of datosMinisterio) {
+            let idArea = registro.id_area;
+
+            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
+            if (!MAPA_AREAS[idArea]) {
+                continue;
+            }
+
+            let listaReservas = registro.datos;
+
+            if (Array.isArray(listaReservas)) {
+                for (let res of listaReservas) {
+                    if (!res) continue;
+
+                    // 1. Extraer los campos de la reserva limpiando espacios
+                    let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
+                    let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
+                    let categoria = String(res.categoría || res.categoria || "").trim();
+                    let horas = res.horas_estimadas ?? res.horasEstimadas;
+                    let fecPet = String(res.fec_pet || res.fecha_peticion || "").trim();
+                    let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
+                    let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
+
+                    // 2. Comprobar que tenga los campos obligatorios rellenos
+                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
+                        continue;
+                    }
+
+                    // 3. Crear texto único para comprobar si la reserva está repetida
+                    let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
+
+                    if (reservasVistas.includes(claveUnica)) {
+                        console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
+                        continue;
+                    }
+
+                    reservasVistas.push(claveUnica);
+
+                    if(nombre.toLowerCase()=="ana"){
+                        total+=1
+                    }
+                }
+            }
+        }
+        
+        alert(total)
+;
+
+    } catch (err) {
+        console.error("Error al cargar ranking:", err);
+        alert("error");
+    }
+}
+
 function pintarFilasRanking(rankingOrdenado, elementoTbody) {
     let html = "";
     for (let i = 0; i < rankingOrdenado.length; i++) {
