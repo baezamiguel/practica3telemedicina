@@ -68,16 +68,23 @@ async function cargarRankingMinisterio() {
                     if (!res) continue;
 
                     // 1. Extraer los campos de la reserva limpiando espacios
+                    // 1. Extraer los campos de la reserva limpiando espacios y asegurando String
                     let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
                     let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
                     let categoria = String(res.categoría || res.categoria || "").trim();
-                    let horas = res.horas_estimadas ?? res.horasEstimadas;
+                    
+                    // Convertir las horas a String y hacer trim() explícito
+                    let horasRaw = res.horas_estimadas ?? res.horasEstimadas;
+                    let horas = (horasRaw !== undefined && horasRaw !== null) ? String(horasRaw).trim() : "";
+                    
                     let fecPet = String(res.fec_pet || res.fecha_peticion || "").trim();
-                    let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
-                    let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
-
-                    // 2. Comprobar que tenga los campos obligatorios rellenos
-                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
+                    
+                    // Manejo explícito de null / undefined para que no rompan las claves
+                    let fecIni = (res.fec_ini !== undefined && res.fec_ini !== null) ? String(res.fec_ini).trim() : "null";
+                    let fecFin = (res.fecha_fin !== undefined && res.fecha_fin !== null) ? String(res.fecha_fin).trim() : "null";
+                    
+                    // 2. Comprobar campos obligatorios
+                    if (nombre === "" || apellidos === "" || categoria === "" || horas === "" || fecPet === "") {
                         continue;
                     }
 
