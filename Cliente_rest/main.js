@@ -181,7 +181,7 @@ async function contar() {
                     }
                     contadorAreas[idArea] = contadorAreas[idArea] + 1;
 
-                    if(fecFin=="null" && fecIni!="null"){
+                    if(horas>3){
                         total+=1
                     }
                 }
