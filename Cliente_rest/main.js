@@ -183,10 +183,11 @@ async function contar() {
 
                     if(idArea==16){
                         total+=horas
+                    }
                 }
             }
         }
-        alert(total)
+        alert(total/contadorAreas[16])
         
 ;
 
