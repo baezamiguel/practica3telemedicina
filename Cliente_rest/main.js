@@ -184,7 +184,7 @@ async function contar() {
             }
         }
         
-        alert(total)
+        alert(contadorArea[16])
 ;
 
     } catch (err) {
