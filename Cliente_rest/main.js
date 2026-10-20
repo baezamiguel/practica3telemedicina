@@ -57,6 +57,10 @@ async function cargarRankingMinisterio() {
                 continue;
             }
 
+            // Validar que la fecha global del envío exista y no esté vacía
+            let fechaEnvio = String(registro.fecha || "").trim();
+            if (fechaEnvio === "" || fechaEnvio === "undefined" || fechaEnvio === "null") continue;
+
             let listaReservas = registro.datos;
 
             if (Array.isArray(listaReservas)) {
