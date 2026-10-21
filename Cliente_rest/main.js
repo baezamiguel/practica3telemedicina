@@ -47,6 +47,10 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
+        // Pre-cargamos todas las áreas registradas con un valor inicial de 0
+        for (let id in MAPA_AREAS) {
+            contadorAreas[id] = 0;
+        }
         let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
 
         for (let registro of datosMinisterio) {
