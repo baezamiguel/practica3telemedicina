@@ -160,39 +160,12 @@ async function contar() {
             if (Array.isArray(listaReservas)) {
                 for (let res of listaReservas) {
                     if (!res) continue;
-
-                    // 1. Extraer los campos de la reserva limpiando espacios
-                    let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
-                    let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
-                    let categoria = String(res.categoría || res.categoria || "").trim();
-                    let horas = res.horas_estimadas ?? res.horasEstimadas;
-                    let fecPet = String(res.fec_pet || res.fecha_peticion || "").trim();
-                    let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
-                    let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
-
-                    // 2. Comprobar que tenga los campos obligatorios rellenos
-                    if (!nombre || !apellidos  || !categoria  || !horas|| !horas  || !horas || !fecPet) {
-                        continue;
+                    if("nombre" in res && "apellidos" in res && "categorías" in res && "horas_estimadas" in res && "fec_pet" in res && "fec_ini" in res && "fecha_fin" in res){
+                        if(idArea==16){
+                            total+=1
+                        }
                     }
-
-                    // 3. Crear texto único para comprobar si la reserva está repetida
-                    //let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
-
-                    //if (reservasVistas.includes(claveUnica)) {
-                    //    console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
-                    //    continue;
-                    //}
-
-                    //reservasVistas.push(claveUnica);
-
-                    if (!contadorAreas[idArea]) {
-                        contadorAreas[idArea] = 0;
-                    }
-                    contadorAreas[idArea] = contadorAreas[idArea] + 1;
-
-                    if(idArea==16){
-                        total+=1
-                    }
+        
                 }
             }
         }
