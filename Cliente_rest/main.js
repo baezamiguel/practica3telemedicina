@@ -160,7 +160,7 @@ async function contar() {
             if (Array.isArray(listaReservas)) {
                 for (let res of listaReservas) {
                     if (!res) continue;
-                    if("nombre" in res && "apellidos" in res && "categoría" in res && "horas_estimadas" in res && "fec_pet" in res && "fec_ini" in res && "fecha_fin" in res){
+                    if("nombre" in res && "apellidos" in res && "origen" in res && "destino" in res && "km" in res && "fecha_inicio" in res && "fecha_fin" in res){
                         if(idArea==4){
                             total+=1
                         }
