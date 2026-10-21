@@ -132,53 +132,6 @@ async function cargarRankingMinisterio() {
     }
 }
 
-async function contar() {
-    try {
-        const res = await fetch(URL_MINISTERIO_API);
-        if (!res.ok) throw new Error("Error HTTP " + res.status);
-        
-        const datosMinisterio = await res.json();
-
-        if (!datosMinisterio || !Array.isArray(datosMinisterio) || datosMinisterio.length === 0) {
-            alert("no hay datos");
-            return;
-        }
-
-        let contadorAreas = {};
-        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
-        let total=0
-
-        for (let registro of datosMinisterio) {
-            let idArea = registro.id_area;
-    
-            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
-            if (!MAPA_AREAS[idArea]) {
-                continue;
-            }
-
-            let listaReservas = registro.datos;
-
-            if (Array.isArray(listaReservas)) {
-                for (let res of listaReservas) {
-                    if (!res) continue;
-                    if("nombre" in res && "apellidos" in res && "origen" in res && "destino" in res && "km" in res && "fecha_inicio" in res && "fecha_fin" in res){
-                        if(idArea==4){
-                            total+=1
-                        }
-                    }
-        
-                }
-            }
-        }
-        alert(total)
-        
-;
-
-    } catch (err) {
-        console.error("Error al cargar ranking:", err);
-        alert("error");
-    }
-}
 
 function pintarFilasRanking(rankingOrdenado, elementoTbody) {
     let html = "";
@@ -297,7 +250,55 @@ function cargarCatalogosYBuscar() {
         });
     });
 }
+/**
+async function contar() {
+    try {
+        const res = await fetch(URL_MINISTERIO_API);
+        if (!res.ok) throw new Error("Error HTTP " + res.status);
+        
+        const datosMinisterio = await res.json();
 
+        if (!datosMinisterio || !Array.isArray(datosMinisterio) || datosMinisterio.length === 0) {
+            alert("no hay datos");
+            return;
+        }
+
+        let contadorAreas = {};
+        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
+        let total=0
+
+        for (let registro of datosMinisterio) {
+            let idArea = registro.id_area;
+    
+            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
+            if (!MAPA_AREAS[idArea]) {
+                continue;
+            }
+
+            let listaReservas = registro.datos;
+
+            if (Array.isArray(listaReservas)) {
+                for (let res of listaReservas) {
+                    if (!res) continue;
+                    if("nombre" in res && "apellidos" in res && "origen" in res && "destino" in res && "km" in res && "fecha_inicio" in res && "fecha_fin" in res){
+                        if(idArea==4){
+                            total+=1
+                        }
+                    }
+        
+                }
+            }
+        }
+        alert(total)
+        
+;
+
+    } catch (err) {
+        console.error("Error al cargar ranking:", err);
+        alert("error");
+    }
+}
+**/
 function mostrarRegistro() {
     document.getElementById('reg-nombre').value = "";
     document.getElementById('reg-apellidos').value = "";
