@@ -302,6 +302,10 @@ async function contar() {
     }
 }
 **/
+//para comparar mismo día
+//if (fecPet.substring(0, 10) === fecIni.substring(0, 10)) {
+//                    contador++;
+//}
 function mostrarRegistro() {
     document.getElementById('reg-nombre').value = "";
     document.getElementById('reg-apellidos').value = "";
