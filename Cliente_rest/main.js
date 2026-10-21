@@ -171,19 +171,19 @@ async function contar() {
                     let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
 
                     // 2. Comprobar que tenga los campos obligatorios rellenos
-                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
+                    if (!nombre || !apellidos  || !categoria  || !horas|| !horas  || !horas || !fecPet) {
                         continue;
                     }
 
                     // 3. Crear texto único para comprobar si la reserva está repetida
-                    let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
+                    //let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
 
-                    if (reservasVistas.includes(claveUnica)) {
-                        console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
-                        continue;
-                    }
+                    //if (reservasVistas.includes(claveUnica)) {
+                    //    console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
+                    //    continue;
+                    //}
 
-                    reservasVistas.push(claveUnica);
+                    //reservasVistas.push(claveUnica);
 
                     if (!contadorAreas[idArea]) {
                         contadorAreas[idArea] = 0;
@@ -191,12 +191,12 @@ async function contar() {
                     contadorAreas[idArea] = contadorAreas[idArea] + 1;
 
                     if(idArea==16){
-                        total+=horas
+                        total+=1
                     }
                 }
             }
         }
-        alert(total/contadorAreas[16])
+        alert(total)
         
 ;
 
