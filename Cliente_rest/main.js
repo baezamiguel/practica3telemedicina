@@ -111,14 +111,13 @@ async function cargarRankingMinisterio() {
 
         // Convertir a Array y ordenar
         let ranking = [];
-        for (let id in contadorAreas) {
-            if (contadorAreas[id] > 0) {
-                ranking.push({
-                    idArea: id,
-                    nombre: MAPA_AREAS[id],
-                    total: contadorAreas[id]
-                });
-            }
+        // Recorremos el MAPA_AREAS completo para asegurarnos de meter TODAS en la tabla
+        for (let id in MAPA_AREAS) {
+            ranking.push({
+                idArea: id,
+                nombre: MAPA_AREAS[id],
+                total: contadorAreas[id]
+            });
         }
 
         ranking.sort((a, b) => b.total - a.total);
