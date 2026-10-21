@@ -161,8 +161,8 @@ async function contar() {
                 for (let res of listaReservas) {
                     if (!res) continue;
                     if("nombre" in res && "apellidos" in res && "categoría" in res && "horas_estimadas" in res && "fec_pet" in res && "fec_ini" in res && "fecha_fin" in res){
-                        if(idArea==16){
-                            total+=4
+                        if(idArea==4){
+                            total+=1
                         }
                     }
         
