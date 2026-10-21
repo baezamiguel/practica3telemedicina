@@ -83,6 +83,7 @@ async function cargarRankingMinisterio() {
                         horas === "" || horas === "null" ||
                         fecPet === "" || fecPet === "null" || fecPet.startsWith("0000-00-00")
                     ) {
+                        console.warn("🚫 Reserva incompleta descartada (ej. faltan horas/categoria/fecPet):", reserva);
                         continue;
                     }
 
