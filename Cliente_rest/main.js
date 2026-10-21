@@ -88,13 +88,13 @@ async function cargarRankingMinisterio() {
                     }
 
                     // 3. 🎯 CLAVE ÚNICA CORREGIDA: Incluye idArea y excluye fecIni/fecFin
-                    let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
+                    //let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
 
-                    if (reservasVistas.has(claveUnica)) {
-                        continue; // Omite duplicados dentro de la misma área
-                    }
+                    //if (reservasVistas.has(claveUnica)) {
+                    //    continue; // Omite duplicados dentro de la misma área
+                    //}
 
-                    reservasVistas.add(claveUnica);
+                    //reservasVistas.add(claveUnica);
 
                     // Acumular conteo
                     if (!contadorAreas[idArea]) {
